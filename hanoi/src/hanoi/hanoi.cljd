@@ -6,15 +6,61 @@
 (def disks 3)
 
 (defonce state (atom {:disks (into {} (map #(vec [% 0]) (range disks)))
+                      :towers [[0 1 2] [] []]
                       :selected nil}))
 
-(defn move-disk [state index tower]
-  ;; TODO: actually enforce movement rules
-  ;; (filter (partial = tower) (map disks (range index)))
-  (assoc-in state [:disks index] tower))
+(defn- prnt [v] (dart:core/print (str v)))
 
-(def style {:tower {:spacing 60
-                    :size 300}
+(defn- print-state [state]
+  (dart:core/print (str "state: " state)))
+
+
+(defn can-move?
+  "Determine whether a disk can move between towers."
+  [t1 t2]
+  (let [from-top (peek t1)
+        to-top (peek t2)]
+    (and from-top (or (not to-top)
+                      (> from-top to-top)))))
+
+(defn move-disk
+  "Move disk between towers"
+  [towers from to]
+  (let [t1 (nth towers from)
+        t2 (nth towers to)
+        disk (peek t1)]
+    (-> towers
+        (update from pop)
+        (update to conj disk))))
+
+(defn get-tower [state index]
+  (get-in state [:towers index]))
+
+(defn get-towers [state]
+  (:towers state))
+
+(defn select-tower [state index]
+  (let [prev (:selected state)
+        prev-tower (when prev (get-tower state prev))
+        next-tower (get-tower state index)]
+    ;; (prnt (str "can move: " (can-move? prev-tower next-tower) "\n"))
+    ;; (when (can-move? prev-tower next-tower)
+    ;;   (prnt (str "moved: " (move-disk (get-towers state) prev index) "\n")))
+    (cond-> state
+      true (assoc :selected index)
+      (and prev (can-move? prev-tower next-tower))
+      (update :towers move-disk prev index)
+      )))
+
+(defn disk-tower
+  "Determine the tower containing a specific disk"
+  [state disk]
+  (->> (map-indexed #(vec [%1 (some (partial = disk) %2)]) (get-towers state))
+       (filter second)
+       first
+       first))
+
+(def style {:tower {:spacing 60 :size 300}
             :disk {:max-size 200 :size-step 40}})
 
 (defn tower-position [index]
@@ -33,29 +79,33 @@
 
 (defn tower [index]
   (f/widget
-   :watch [{:keys [selected towers]} state]
-   :let [tower (nth towers index)
+   :watch [-state state]
+   :let [{:keys [selected towers]} -state
+         tower (nth towers index)
          {:keys [spacing size]} (:tower style)]
    (m/Positioned .left (* index (+ size spacing)))
    (m/SizedBox .width size .height size)
    (m/Material .color m/Colors.grey)
-   (m/InkWell .onTap (fn [] (when selected (swap! state move-disk selected index))))))
+   (m/InkWell .onTap (fn [] ;; (swap! state assoc :selected index)
+                       ;; (print-state -state)
+                       (swap! state select-tower index)
+                       ))))
 
 (defn disk [index]
   (f/widget
-   :watch [{:keys [selected disks]} state]
-   :let [tower (get disks index)
+   :watch [state state]
+   :let [tower (disk-tower state index)
          size (disk-size index)]
    (m/AnimatedPositioned .left (disk-position index tower)
                          .duration (Duration .milliseconds 800)
                          .curve m/Curves.fastOutSlowIn)
    (m/SizedBox .width size .height size)
-   (m/Material .color (get [m/Colors.blue m/Colors.red m/Colors.green] index)
-               .shape (when (= selected index) (m/Border.all .width 10)))
+   (m/Material .color (get [m/Colors.blue m/Colors.red m/Colors.green] index))
    (m/InkWell
     ;; .borderRadius (m/BorderRadius.circular 20)
     ;; .customBorder (m/RoundedRectangleBorder .borderRadius (m/BorderRadius.cicular 20))
-    .onTap (fn [] (swap! state assoc :selected index)))))
+    .onTap (fn [] ;; (swap! state assoc :selected index)
+             ))))
 
 (def widget
   (f/widget

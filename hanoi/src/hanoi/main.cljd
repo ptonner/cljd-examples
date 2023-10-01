@@ -13,34 +13,16 @@
 
 (def home
   (f/widget
-   (m/DefaultTabController .length (count tabs))
-   (m/Scaffold
-    .appBar
-    (m/AppBar
-     .bottom
-     (m/TabBar
-      .tabs
-      (for [t tabs] (tabbar-tab t)))))
+   (m/Scaffold)
    .body
-   (m/TabBarView
-    .children
-    (for [t tabs] (tabbar-view t)))))
+   hn/widget))
 
 (defn main []
   (f/run
-   (m/MaterialApp
-    .title "Welcome to Flutter"
-    .theme (m/ThemeData .primarySwatch m.Colors/blue))
-   .home
-   (m/Scaffold
-    .appBar (m/AppBar
-             .title (m/Text "Welcome to ClojureDart")))
-   .body
-   m/Center
-   home
-   ;; cg/widget
-    ;; (m/Text "Let's get coding!"
-    ;;         .style (m/TextStyle
-    ;;                 .color m.Colors/red
-    ;;                 .fontSize 32.0))
-   ))
+    (m/MaterialApp
+     .title "Welcome to Flutter"
+     .theme (m/ThemeData .primarySwatch m.Colors/blue))
+    .home
+    (m/Scaffold
+     .appBar (m/AppBar .title (m/Text "Towers of Hanoi")))
+    .body m/Center home))

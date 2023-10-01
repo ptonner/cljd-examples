@@ -1,0 +1,50 @@
+(ns cljd-scratch.main
+  (:require ["package:flutter/material.dart" :as m]
+            [cljd.flutter :as f]
+            [cljd-scratch.clickable-grid :as cg]
+            [cljd-scratch.hanoi :as hn]
+            [cljd-scratch.build-layout :as bl]))
+
+(def tabs [{:widget hn/widget :name "hanoi"}
+           {:widget bl/widget :name "build layout"}
+           {:widget cg/widget :name "clickable grid"}])
+
+(defn tabbar-tab [{:keys [name]}]
+  (m/Tab .child (m/Text name)))
+
+(defn tabbar-view [{:keys [widget]}]
+  (m/Tab .child widget))
+
+(def home
+  (f/widget
+   (m/DefaultTabController .length (count tabs))
+   (m/Scaffold
+    .appBar
+    (m/AppBar
+     .bottom
+     (m/TabBar
+      .tabs
+      (for [t tabs] (tabbar-tab t)))))
+   .body
+   (m/TabBarView
+    .children
+    (for [t tabs] (tabbar-view t)))))
+
+(defn main []
+  (f/run
+   (m/MaterialApp
+    .title "Welcome to Flutter"
+    .theme (m/ThemeData .primarySwatch m.Colors/blue))
+   .home
+   (m/Scaffold
+    .appBar (m/AppBar
+             .title (m/Text "Welcome to ClojureDart")))
+   .body
+   m/Center
+   home
+   ;; cg/widget
+    ;; (m/Text "Let's get coding!"
+    ;;         .style (m/TextStyle
+    ;;                 .color m.Colors/red
+    ;;                 .fontSize 32.0))
+   ))

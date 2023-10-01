@@ -1,0 +1,67 @@
+(ns cljd-scratch.hanoi
+  (:require
+   ["package:flutter/material.dart" :as m]
+   [cljd.flutter :as f]))
+
+(def disks 3)
+
+(defonce state (atom {:disks (into {} (map #(vec [% 0]) (range disks)))
+                      :selected nil}))
+
+(defn move-disk [state index tower]
+  ;; TODO: actually enforce movement rules
+  ;; (filter (partial = tower) (map disks (range index)))
+  (assoc-in state [:disks index] tower))
+
+(def style {:tower {:spacing 60
+                    :size 300}
+            :disk {:max-size 200 :size-step 40}})
+
+(defn tower-position [index]
+  (let [{:keys [spacing size]} (:tower style)]
+    (* index (+ size spacing))))
+
+(defn disk-size [index]
+  (let [{:keys [max-size size-step]} (:disk style)]
+    (- max-size (* size-step index))))
+
+(defn disk-position [index tower]
+  (let [size (disk-size index)
+        tower-size (get-in style [:tower :size])
+        pos (tower-position tower)]
+    (+ pos (/ (- tower-size size) 2))))
+
+(defn tower [index]
+  (f/widget
+   :watch [{:keys [selected towers]} state]
+   :let [tower (nth towers index)
+         {:keys [spacing size]} (:tower style)]
+   (m/Positioned .left (* index (+ size spacing)))
+   (m/SizedBox .width size .height size)
+   (m/Material .color m/Colors.grey)
+   (m/InkWell .onTap (fn [] (when selected (swap! state move-disk selected index))))))
+
+(defn disk [index]
+  (f/widget
+   :watch [{:keys [selected disks]} state]
+   :let [tower (get disks index)
+         size (disk-size index)]
+   (m/AnimatedPositioned .left (disk-position index tower)
+                         .duration (Duration .milliseconds 800)
+                         .curve m/Curves.fastOutSlowIn)
+   (m/SizedBox .width size .height size)
+   (m/Material .color (get [m/Colors.blue m/Colors.red m/Colors.green] index)
+               .shape (when (= selected index) (m/Border.all .width 10)))
+   (m/InkWell
+    ;; .borderRadius (m/BorderRadius.circular 20)
+    ;; .customBorder (m/RoundedRectangleBorder .borderRadius (m/BorderRadius.cicular 20))
+    .onTap (fn [] (swap! state assoc :selected index)))))
+
+(def widget
+  (f/widget
+   (m/SizedBox .width 1600 .height 400)
+   (m/Stack .alignment m/Alignment.center)
+   .children
+   (concat
+    (map tower (range 3))
+    (map disk (range disks)))))

@@ -1,4 +1,4 @@
-(ns cljd-scratch.hanoi
+(ns hanoi.hanoi
   (:require
    ["package:flutter/material.dart" :as m]
    [cljd.flutter :as f]))
